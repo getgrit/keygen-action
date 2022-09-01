@@ -1,11 +1,43 @@
-name: 'Your name here'
-description: 'Provide a description here'
-author: 'Your name or organization here'
+name: 'Release to Keygen'
+description: 'Create a release and upload associated artifact'
+author: 'hfend'
 inputs:
-  milliseconds: # change this
+  account-id:
     required: true
-    description: 'input description here'
-    default: 'default value if applicable'
+    description: 'Account ID'
+  token:
+    required: true
+    description: 'Token'
+
+  product-id:
+    required: true
+    description: 'Product ID'
+
+  release-publish:
+    required: true
+    description: 'Publish release (true / false)?'
+  
+  release-name:
+    required: false
+    description: 'Release Name'
+  release-version:
+    required: true
+    description: 'Release version'
+  release-channel:
+    required: true
+    description: 'Release channel'
+  release-tag:
+    required: false
+    description: 'Release tag'
+  artifact-filepath:
+    required: true
+    description: 'Artifact file path'
+  artifact-platform:
+    required: false
+    description: 'Artifact platform'
+  artifact-arch:
+    required: false
+    description: 'Artifact arch'
 runs:
   using: 'node16'
   main: 'dist/index.js'

@@ -1,18 +1,62 @@
+import fs from 'fs'
+import path from 'path'
 import * as core from '@actions/core'
-import {wait} from './wait'
+
+import KeygenAPI from './api'
+import {getValidatedInputs} from './inputs'
 
 async function run(): Promise<void> {
   try {
-    const ms: string = core.getInput('milliseconds')
-    core.debug(`Waiting ${ms} milliseconds ...`) // debug is only output if you set the secret `ACTIONS_STEP_DEBUG` to true
+    core.info('Validating inputs..')
+    const inputs = getValidatedInputs()
 
-    core.debug(new Date().toTimeString())
-    await wait(parseInt(ms, 10))
-    core.debug(new Date().toTimeString())
+    core.info('Verifying file..')
+    const fileStat = fs.statSync(inputs['artifact-filepath'])
 
-    core.setOutput('time', new Date().toTimeString())
+    const keygenAPI = new KeygenAPI({
+      token: inputs.token,
+      accountID: inputs['account-id']
+    })
+
+    core.info('Creating release..')
+    const release = await keygenAPI.releaseCreate({
+      productID: inputs['product-id'],
+      attributes: {
+        name: inputs['release-name'],
+        version: inputs['release-version'],
+        tag: inputs['release-tag'],
+        channel: inputs['release-channel']
+      }
+    })
+
+    core.info('Creating artifact..')
+    const artifact = await keygenAPI.artifactCreate({
+      releaseID: release.id,
+      attributes: {
+        filename: path.basename(inputs['artifact-filepath']),
+        filetype: path.extname(inputs['artifact-filepath']).replace('.', ''),
+        filesize: fileStat.size,
+        platform: inputs['artifact-platform'],
+        arch: inputs['artifact-arch']
+      }
+    })
+
+    core.info('Uploading artifact file..')
+    await keygenAPI.artifactFileUpload(
+      artifact.links.redirect,
+      fs.readFileSync(inputs['artifact-filepath'])
+    )
+
+    if (inputs['release-publish']) {
+      core.info('Publishing release..')
+      await keygenAPI.releasePublish({
+        releaseID: release.id
+      })
+    }
+
+    core.info('Success.')
   } catch (error) {
-    if (error instanceof Error) core.setFailed(error.message)
+    core.setFailed(error instanceof Error ? error : String(error))
   }
 }
 
