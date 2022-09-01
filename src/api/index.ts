@@ -164,9 +164,11 @@ export default class KeygenAPI {
     file: Buffer
   ): Promise<void> {
     // NOTE:
-    // - Would've uploaded the file as a stream (using fs.createReadStream()), but S3 does not support this.
-    // - Also would've added support for S3's Multipart upload (for files larger than a given threshold), but Keygen does not provide utilities for getting pre-signed part upload urls.
-    // Consequently, this upload operation stays at the mercy of available Runner memory.
+    // This endpoint expects the whole file to be loaded in memory.
+    // As a result, the upload operation is at the mercy of available Runner memory.
+    //
+    // We would've made the upload read the file as a stream (using fs.createReadStream()). However, S3 does not support this.
+    // We would've also considered supporting S3's Multipart upload (when a file is detected to be larger than a given threshold). Howeber, Keygen does not provide utilities for getting pre-signed part upload urls.
 
     const response = await fetch(signedS3UploadUrl, {
       method: 'PUT',
