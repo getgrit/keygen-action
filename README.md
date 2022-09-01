@@ -39,3 +39,22 @@ This Github action creates (and, if needed, publishes) a release for any artifac
     # Optional
     artifact-arch: 'amd64'
 ```
+
+## :construction: TODO (WIP):
+
+- [x] Feature: :white_check_mark: Releases for **single artifacts/files**
+- [ ] Feature: Add support for releases with **multiple associated artifacts/files**
+  - Github Actions' [inputs metadata](https://docs.github.com/en/actions/creating-actions/metadata-syntax-for-github-actions#inputs), does not provide a way for declaring fields of a `list of objects` type.
+  - a possible approach is to have artifact info be provided as a json string
+- [ ] Feature: Better error logs
+  - Currently, `core.setFailed(Error)` usages only show the `Error.message` value, which does not provide enough info in Action console logs, yet.
+  - Our custom error messages (e.g. [api errors](src/api/errors.ts) need to pass more info in the `Error.message` field, than just an error name.
+- [ ] Chore: Upgrade dependencies (See *Dependabot* pull requests)
+- [ ] Chore: Tests
+  - Most importantly, integration tests for the [main.ts > run()](src/main.ts) logic.
+  - N.B. Typescript (Strict) and yup (validation and type inference) already provide good type-safety guarantees.
+- [ ] Chore: Publish the action to the [Actions Marketplace](https://docs.github.com/en/actions/creating-actions/publishing-actions-in-github-marketplace)
+
+## Contributing:
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for info on how to set up a local environment for development and tests.
