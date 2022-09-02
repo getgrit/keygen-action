@@ -29,15 +29,10 @@ inputs:
   release-tag:
     required: false
     description: 'Release tag'
-  artifact-filepath:
+
+  artifacts-json:
     required: true
-    description: 'Artifact file path'
-  artifact-platform:
-    required: false
-    description: 'Artifact platform'
-  artifact-arch:
-    required: false
-    description: 'Artifact arch'
+    description: 'A json string of a list of artifact definitions'
 runs:
   using: 'node16'
   main: 'dist/index.js'

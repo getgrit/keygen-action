@@ -1,4 +1,4 @@
-import {boolean, object, string} from 'yup'
+import {boolean, array, object, string} from 'yup'
 
 export const inputsSchema = object({
   token: string().required(),
@@ -13,7 +13,13 @@ export const inputsSchema = object({
   'release-channel': string().required(),
   'release-tag': string().optional(),
 
-  'artifact-filepath': string().required(),
-  'artifact-platform': string().optional(),
-  'artifact-arch': string().optional()
+  'artifacts-json': array(
+    object({
+      filepath: string().required(),
+      platform: string().optional(),
+      arch: string().optional()
+    }).required()
+  )
+    .min(1)
+    .required()
 })

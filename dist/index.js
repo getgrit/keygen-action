@@ -145,9 +145,11 @@ class KeygenAPI {
     artifactFileUpload(signedS3UploadUrl, file) {
         return __awaiter(this, void 0, void 0, function* () {
             // NOTE:
-            // - Would've uploaded the file as a stream (using fs.createReadStream()), but S3 does not support this.
-            // - Also would've added support for S3's Multipart upload (for files larger than a given threshold), but Keygen does not provide utilities for getting pre-signed part upload urls.
-            // Consequently, this upload operation stays at the mercy of available Runner memory.
+            // This endpoint expects the whole file to be loaded in memory.
+            // As a result, the upload operation is at the mercy of available Runner memory.
+            //
+            // We would've made the upload read the file as a stream (using fs.createReadStream()). However, S3 does not support this.
+            // We would've also considered supporting S3's Multipart upload (when a file is detected to be larger than a given threshold). Howeber, Keygen does not provide utilities for getting pre-signed part upload urls.
             const response = yield (0, node_fetch_1.default)(signedS3UploadUrl, {
                 method: 'PUT',
                 body: file
@@ -193,10 +195,13 @@ exports.getValidatedInputs = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const schema_1 = __nccwpck_require__(9661);
 const getValidatedInputs = () => {
-    return schema_1.inputsSchema.validateSync(Object.fromEntries(Object.entries(schema_1.inputsSchema.fields).map(([key]) => [
-        key,
-        core.getInput(key)
-    ])));
+    const _loadInput = (key) => {
+        if (key === 'artifacts-json') {
+            return JSON.parse(core.getMultilineInput(key).join(''));
+        }
+        return core.getInput(key);
+    };
+    return schema_1.inputsSchema.validateSync(Object.fromEntries(Object.entries(schema_1.inputsSchema.fields).map(([key]) => [key, _loadInput(key)])));
 };
 exports.getValidatedInputs = getValidatedInputs;
 
@@ -220,9 +225,13 @@ exports.inputsSchema = (0, yup_1.object)({
     'release-version': (0, yup_1.string)().required(),
     'release-channel': (0, yup_1.string)().required(),
     'release-tag': (0, yup_1.string)().optional(),
-    'artifact-filepath': (0, yup_1.string)().required(),
-    'artifact-platform': (0, yup_1.string)().optional(),
-    'artifact-arch': (0, yup_1.string)().optional()
+    'artifacts-json': (0, yup_1.array)((0, yup_1.object)({
+        filepath: (0, yup_1.string)().required(),
+        platform: (0, yup_1.string)().optional(),
+        arch: (0, yup_1.string)().optional()
+    }).required())
+        .min(1)
+        .required()
 });
 
 
@@ -271,12 +280,13 @@ const core = __importStar(__nccwpck_require__(2186));
 const api_1 = __importDefault(__nccwpck_require__(5614));
 const inputs_1 = __nccwpck_require__(4629);
 function run() {
+    var _a;
     return __awaiter(this, void 0, void 0, function* () {
         try {
             core.info('Validating inputs..');
             const inputs = (0, inputs_1.getValidatedInputs)();
-            core.info('Verifying file..');
-            const fileStat = fs_1.default.statSync(inputs['artifact-filepath']);
+            core.info('Verifying files..');
+            const filesStat = (_a = inputs['artifacts-json']) === null || _a === void 0 ? void 0 : _a.map(inputArtifact => fs_1.default.statSync(inputArtifact['filepath']));
             const keygenAPI = new api_1.default({
                 token: inputs.token,
                 accountID: inputs['account-id']
@@ -291,19 +301,23 @@ function run() {
                     channel: inputs['release-channel']
                 }
             });
-            core.info('Creating artifact..');
-            const artifact = yield keygenAPI.artifactCreate({
-                releaseID: release.id,
-                attributes: {
-                    filename: path_1.default.basename(inputs['artifact-filepath']),
-                    filetype: path_1.default.extname(inputs['artifact-filepath']).replace('.', ''),
-                    filesize: fileStat.size,
-                    platform: inputs['artifact-platform'],
-                    arch: inputs['artifact-arch']
-                }
-            });
-            core.info('Uploading artifact file..');
-            yield keygenAPI.artifactFileUpload(artifact.links.redirect, fs_1.default.readFileSync(inputs['artifact-filepath']));
+            for (let i = 0; i < inputs['artifacts-json'].length; i++) {
+                core.info(`Creating artifact (${i + 1}/${inputs['artifacts-json'].length})..`);
+                const artifact = yield keygenAPI.artifactCreate({
+                    releaseID: release.id,
+                    attributes: {
+                        filename: path_1.default.basename(inputs['artifacts-json'][i].filepath),
+                        filetype: path_1.default
+                            .extname(inputs['artifacts-json'][i].filepath)
+                            .replace('.', ''),
+                        filesize: filesStat[i].size,
+                        platform: inputs['artifacts-json'][i].platform,
+                        arch: inputs['artifacts-json'][i].arch
+                    }
+                });
+                core.info(`Uploading artifact file (${i + 1}/${inputs['artifacts-json'].length})..`);
+                yield keygenAPI.artifactFileUpload(artifact.links.redirect, fs_1.default.readFileSync(inputs['artifacts-json'][i].filepath));
+            }
             if (inputs['release-publish']) {
                 core.info('Publishing release..');
                 yield keygenAPI.releasePublish({

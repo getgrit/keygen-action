@@ -29,15 +29,26 @@ This Github action creates (and, if needed, publishes) a release for any artifac
     # Optional
     release-tag: 'latest'
 
-    # Required: Path to the artifact/file
-    # Must be made available in the Github Runner runtime through any adequate preceeding workflow step
+    # Required: A json list of artifact/file definitions
+    #   - filepath:  Required
+    #   - platform:  Optional
+    #   - arch:      Optional
+    # N.B. Notice the syntax for the example field below is a Multiline string (do not forget the preceding `|` char). Ordinary single-line json strings are also accepted.
+    # N.B. The actual files need to be made available in the Github Runner runtime through any adequate preceeding workflow step
     # e.g. using the 'actions/checkout@v3' Github action for checking-out Github repository files.
-    artifact-filepath: './README.md'
-
-    # Optional
-    artifact-platform: 'darwin'
-    # Optional
-    artifact-arch: 'amd64'
+    artifacts-json: |
+      [
+        {
+          "filepath": "./file1.ext",
+          "platform": "darwin",
+          "arch": "amd64"
+        },
+        {
+          "filepath": "./file2.ext",
+          "platform": "darwin",
+          "arch": "amd64"
+        }
+      ]
 ```
 
 ## :construction: TODO (WIP):

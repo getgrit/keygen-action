@@ -10,8 +10,10 @@ async function run(): Promise<void> {
     core.info('Validating inputs..')
     const inputs = getValidatedInputs()
 
-    core.info('Verifying file..')
-    const fileStat = fs.statSync(inputs['artifact-filepath'])
+    core.info('Verifying files..')
+    const filesStat = inputs['artifacts-json']?.map(inputArtifact =>
+      fs.statSync(inputArtifact['filepath'])
+    )
 
     const keygenAPI = new KeygenAPI({
       token: inputs.token,
@@ -29,23 +31,33 @@ async function run(): Promise<void> {
       }
     })
 
-    core.info('Creating artifact..')
-    const artifact = await keygenAPI.artifactCreate({
-      releaseID: release.id,
-      attributes: {
-        filename: path.basename(inputs['artifact-filepath']),
-        filetype: path.extname(inputs['artifact-filepath']).replace('.', ''),
-        filesize: fileStat.size,
-        platform: inputs['artifact-platform'],
-        arch: inputs['artifact-arch']
-      }
-    })
+    for (let i = 0; i < inputs['artifacts-json'].length; i++) {
+      core.info(
+        `Creating artifact (${i + 1}/${inputs['artifacts-json'].length})..`
+      )
+      const artifact = await keygenAPI.artifactCreate({
+        releaseID: release.id,
+        attributes: {
+          filename: path.basename(inputs['artifacts-json'][i].filepath),
+          filetype: path
+            .extname(inputs['artifacts-json'][i].filepath)
+            .replace('.', ''),
+          filesize: filesStat[i].size,
+          platform: inputs['artifacts-json'][i].platform,
+          arch: inputs['artifacts-json'][i].arch
+        }
+      })
 
-    core.info('Uploading artifact file..')
-    await keygenAPI.artifactFileUpload(
-      artifact.links.redirect,
-      fs.readFileSync(inputs['artifact-filepath'])
-    )
+      core.info(
+        `Uploading artifact file (${i + 1}/${
+          inputs['artifacts-json'].length
+        })..`
+      )
+      await keygenAPI.artifactFileUpload(
+        artifact.links.redirect,
+        fs.readFileSync(inputs['artifacts-json'][i].filepath)
+      )
+    }
 
     if (inputs['release-publish']) {
       core.info('Publishing release..')
