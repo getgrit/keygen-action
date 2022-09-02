@@ -6,7 +6,7 @@ This Github action creates (and, if needed, publishes) a release for any artifac
 
 ```yaml
 - name: Release to Keygen
-  uses: hfend/keygen-release-action-typescript@main # TODO: update action ref
+  uses: unhack/keygen-action@main # TODO: update action ref
   with:
     # Required: Keygen Account ID or slug
     account-id: 'your-keygen-account-id-or-slug'
