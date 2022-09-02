@@ -54,9 +54,7 @@ This Github action creates (and, if needed, publishes) a release for any artifac
 ## :construction: TODO (WIP):
 
 - [x] Feature: :white_check_mark: Releases for **single artifacts/files**
-- [ ] Feature: Add support for releases with **multiple associated artifacts/files**
-  - Github Actions' [inputs metadata](https://docs.github.com/en/actions/creating-actions/metadata-syntax-for-github-actions#inputs), does not provide a way for declaring fields of a `list of objects` type.
-  - a possible approach is to have artifact info be provided as a json string
+- [x] Feature: Add support for releases with **multiple associated artifacts/files**
 - [ ] Feature: Better error logs
   - Currently, `core.setFailed(Error)` usages only show the `Error.message` value, which does not provide enough info in Action console logs, yet.
   - Our custom error messages (e.g. [api errors](src/api/errors.ts) need to pass more info in the `Error.message` field, than just an error name.
