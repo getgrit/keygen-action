@@ -142,17 +142,14 @@ class KeygenAPI {
             return data;
         });
     }
-    artifactFileUpload(signedS3UploadUrl, file) {
+    artifactFileUpload(signedS3UploadUrl, fileStream, size) {
         return __awaiter(this, void 0, void 0, function* () {
-            // NOTE:
-            // This endpoint expects the whole file to be loaded in memory.
-            // As a result, the upload operation is at the mercy of available Runner memory.
-            //
-            // We would've made the upload read the file as a stream (using fs.createReadStream()). However, S3 does not support this.
-            // We would've also considered supporting S3's Multipart upload (when a file is detected to be larger than a given threshold). Howeber, Keygen does not provide utilities for getting pre-signed part upload urls.
             const response = yield (0, node_fetch_1.default)(signedS3UploadUrl, {
                 method: 'PUT',
-                body: file
+                headers: {
+                    'Content-Length': String(size)
+                },
+                body: fileStream
             });
             if (response.ok) {
                 return;
@@ -316,7 +313,7 @@ function run() {
                     }
                 });
                 core.info(`Uploading artifact file (${i + 1}/${inputs['artifacts-json'].length})..`);
-                yield keygenAPI.artifactFileUpload(artifact.links.redirect, fs_1.default.readFileSync(inputs['artifacts-json'][i].filepath));
+                yield keygenAPI.artifactFileUpload(artifact.links.redirect, fs_1.default.createReadStream(inputs['artifacts-json'][i].filepath), filesStat[i].size);
             }
             if (inputs['release-publish']) {
                 core.info('Publishing release..');

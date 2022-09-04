@@ -1,3 +1,4 @@
+import fs from 'fs'
 import type {RequestRedirect, Response} from 'node-fetch'
 import type {InferType} from 'yup'
 import fetch from 'node-fetch'
@@ -161,18 +162,15 @@ export default class KeygenAPI {
 
   async artifactFileUpload(
     signedS3UploadUrl: string,
-    file: Buffer
+    fileStream: fs.ReadStream,
+    size: number
   ): Promise<void> {
-    // NOTE:
-    // This endpoint expects the whole file to be loaded in memory.
-    // As a result, the upload operation is at the mercy of available Runner memory.
-    //
-    // We would've made the upload read the file as a stream (using fs.createReadStream()). However, S3 does not support this.
-    // We would've also considered supporting S3's Multipart upload (when a file is detected to be larger than a given threshold). Howeber, Keygen does not provide utilities for getting pre-signed part upload urls.
-
     const response = await fetch(signedS3UploadUrl, {
       method: 'PUT',
-      body: file
+      headers: {
+        'Content-Length': String(size)
+      },
+      body: fileStream
     })
 
     if (response.ok) {

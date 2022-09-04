@@ -55,7 +55,8 @@ async function run(): Promise<void> {
       )
       await keygenAPI.artifactFileUpload(
         artifact.links.redirect,
-        fs.readFileSync(inputs['artifacts-json'][i].filepath)
+        fs.createReadStream(inputs['artifacts-json'][i].filepath),
+        filesStat[i].size
       )
     }
 
