@@ -25,9 +25,12 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@actions/core": "^1.6.0"
+    "@actions/core": "^1.6.0",
+    "node-fetch": "^3.2.10",
+    "yup": "^0.32.11"
   },
   "devDependencies": {
+    "@types/jest": "^29.0.0",
     "@types/node": "^16.10.5",
     "@typescript-eslint/parser": "^5.8.1",
     "@vercel/ncc": "^0.31.1",
